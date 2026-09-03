@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Sales Report</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        input,
+        button {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .add {
+            background: #2563eb;
+            color: white;
+        }
+
+        .clear {
+            background: #dc2626;
+            color: white;
+        }
+
+        .print {
+            background: #16a34a;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 13px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #f1f5f9;
+        }
+
+        .number {
+            text-align: right;
+        }
+
+        .delete {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 7px 10px;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .form {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th,
+            td {
+                padding: 9px 5px;
+            }
+
+            .container {
+                margin: 10px auto;
+                padding: 10px;
+            }
+        }
+
+        @media print {
+            .form,
+            .actions,
+            .delete-col {
+                display: none;
+            }
+
+            body {
+                background: white;
+            }
+
+            .card {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h1>Store Sales Report</h1>
+
+            <p>
+                Add products, their price, and quantity.
+                The website automatically calculates the total.
+            </p>
+
+            <!-- INPUT FORM -->
+            <div class="form">
+
+                <input
+                    id="productName"
+                    type="text"
+                    placeholder="Product name"
+                >
+
+                <input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Price"
+                >
+
+                <input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="Quantity"
+                >
+
+                <button class="add" onclick="addProduct()">
+                    Add Product
+                </button>
+
+            </div>
+
+
+            <!-- PRODUCT TABLE -->
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Product Name</th>
+                        <th class="number">Price</th>
+                        <th class="number">Quantity</th>
+                        <th class="number">Total</th>
+                        <th class="delete-col">Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="productTable">
+                </tbody>
+
+            </table>
+
+
+            <!-- GRAND TOTAL -->
+            <div class="summary">
+
+                Grand Total:
+                ₱<span id="grandTotal">0.00</span>
+
+            </div>
+
+
+            <!-- BUTTONS -->
+            <div class="actions">
+
+                <button class="print" onclick="window.print()">
+                    Print Report
+                </button>
+
+                <button class="clear" onclick="clearReport()">
+                    Clear Report
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        // Load saved products
+        let products =
+            JSON.parse(localStorage.getItem("storeReport")) || [];
+
+
+        // ADD PRODUCT
+        function addProduct() {
+
+            const name =
+                document.getElementById("productName").value.trim();
+
+            const price =
+                parseFloat(document.getElementById("price").value);
+
+            const quantity =
+                parseInt(document.getElementById("quantity").value);
+
+
+            // Check inputs
+            if (
+                !name ||
+                isNaN(price) ||
+                price < 0 ||
+                isNaN(quantity) ||
+                quantity < 1
+            ) {
+
+                alert(
+                    "Please enter a product name, valid price, and quantity."
+                );
+
+                return;
+            }
+
+
+            // Add product
+            products.push({
+
+                name: name,
+                price: price,
+                quantity: quantity
+
+            });
+
+
+            // Save and display
+            saveAndDisplay();
+
+
+            // Clear inputs
+            document.getElementById("productName").value = "";
+            document.getElementById("price").value = "";
+            document.getElementById("quantity").value = "";
+
+
+            // Put cursor back in product name
+            document.getElementById("productName").focus();
+
+        }
+
+
+        // DELETE PRODUCT
+        function deleteProduct(index) {
+
+            products.splice(index, 1);
+
+            saveAndDisplay();
+
+        }
+
+
+        // CLEAR REPORT
+        function clearReport() {
+
+            if (products.length === 0) {
+                return;
+            }
+
+
+            if (confirm("Clear the entire report?")) {
+
+                products = [];
+
+                saveAndDisplay();
+
+            }
+
+        }
+
+
+        // SAVE DATA
+        function saveAndDisplay() {
+
+            localStorage.setItem(
+                "storeReport",
+                JSON.stringify(products)
+            );
+
+            displayProducts();
+
+        }
+
+
+        // DISPLAY PRODUCTS
+        function displayProducts() {
+
+            const table =
+                document.getElementById("productTable");
+
+            table.innerHTML = "";
+
+
+            let grandTotal = 0;
+
+
+            products.forEach((product, index) => {
+
+                // Calculate product total
+                const total =
+                    product.price * product.quantity;
+
+
+                // Add to grand total
+                grandTotal += total;
+
+
+                table.innerHTML += `
+
+                    <tr>
+
+                        <td>
+                            ${escapeHtml(product.name)}
+                        </td>
+
+                        <td class="number">
+                            ₱${product.price.toFixed(2)}
+                        </td>
+
+                        <td class="number">
+                            ${product.quantity}
+                        </td>
+
+                        <td class="number">
+                            ₱${total.toFixed(2)}
+                        </td>
+
+                        <td class="delete-col">
+
+                            <button
+                                class="delete"
+                                onclick="deleteProduct(${index})"
+                            >
+                                Delete
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            });
+
+
+            // Display grand total
+            document.getElementById("grandTotal")
+                .textContent = grandTotal.toFixed(2);
+
+        }
+
+
+        // Prevent HTML from being entered as product name
+        function escapeHtml(text) {
+
+            const div =
+                document.createElement("div");
+
+            div.textContent = text;
+
+            return div.innerHTML;
+
+        }
+
+
+        // Press ENTER to add product
+        document
+            .getElementById("quantity")
+            .addEventListener("keydown", function(event) {
+
+                if (event.key === "Enter") {
+
+                    addProduct();
+
+                }
+
+            });
+
+
+        // Display saved products when page opens
+        displayProducts();
+
+    </script>
+
+</body>
+</html>
